@@ -17,7 +17,8 @@ class State(threading.Thread):
 
     fields = ('stats', 'registered_tasks', 'scheduled_tasks',
               'active_tasks', 'reserved_tasks', 'revoked_tasks',
-              'ping', 'active_queues', 'conf', 'broker_queues')
+              'ping', 'active_queues', 'conf', 'broker_queues',
+              'results')
 
     def __init__(self, celery_app, broker_api=None):
         threading.Thread.__init__(self)

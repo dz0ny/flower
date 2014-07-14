@@ -68,6 +68,7 @@ class WorkerModel(BaseModel):
         self.registered_tasks = [x for x in state.registered_tasks.get(
                                  name, {}) if not x.startswith('celery.')]
         self.reserved_tasks = state.reserved_tasks.get(name, {})
+        self.results = state.reserved_tasks.get(name, {})
         self.conf = state.conf.get(name, {})
 
     @classmethod
@@ -84,6 +85,7 @@ class WorkerModel(BaseModel):
             self.registered_tasks == other.registered_tasks and\
             self.scheduled_tasks == other.scheduled_tasks and\
             self.reserved_tasks == other.reserved_tasks and\
+            self.results == other.reserved_tasks and\
             self.conf == other.conf
 
 
