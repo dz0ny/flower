@@ -40,6 +40,7 @@ class State(threading.Thread):
         self._active_queues = {}
         self._confs = {}
         self._broker_queues = []
+        self._results = []
 
     def run(self):
         try:
@@ -62,6 +63,8 @@ class State(threading.Thread):
         burl = self._celery_app.connection().as_uri(include_password=True)
         broker = None
         try:
+            print self._broker_api
+            print transport
             if transport == 'amqp' and self._broker_api:
                 broker = Broker(burl, self._broker_api)
                 broker.queues([])
@@ -101,6 +104,16 @@ class State(threading.Thread):
                 conf = hasattr(i, 'conf') and i.conf()
                 logging.debug('Conf: %s', pformat(conf))
 
+                results = []
+                if hasattr(self._celery_app.backend, 'client'):
+                    store = self._celery_app.backend
+
+                    for t_id in store.client.keys('{}*'.format(store.task_keyprefix)):
+                        t_id = t_id.replace(store.task_keyprefix, '')
+                        task = store.get_task_meta(t_id)
+                        task['id'] = t_id
+                        results.append(task)
+
                 try:
                     if broker:
                         broker_queues = broker.queues(self.active_queue_names)
@@ -123,6 +136,7 @@ class State(threading.Thread):
                     self._active_queues = active_queues or {}
                     self._conf = conf or {}
                     self._broker_queues = broker_queues or []
+                    self._results = results or []
 
                 try_interval = 1
 

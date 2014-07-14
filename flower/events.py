@@ -1,14 +1,15 @@
 from __future__ import absolute_import
 from __future__ import with_statement
+import pickle
 
 import time
-import shelve
 import logging
 import threading
 
 from functools import partial
 
 import celery
+import redis
 
 from tornado.ioloop import PeriodicCallback
 from tornado.ioloop import IOLoop
@@ -57,10 +58,10 @@ class Events(threading.Thread):
 
         if self._persistent:
             logging.debug("Loading state from '%s'...", db)
-            state = shelve.open(self._db)
-            if state:
-                self.state = state['events']
-            state.close()
+            self.con = redis.StrictRedis.from_url(self._db)
+            _state = self.con.get('flower:state')
+            if _state:
+                self.state = pickle.loads(_state)
 
         if not self.state:
             self.state = EventsState(**kwargs)
@@ -77,9 +78,7 @@ class Events(threading.Thread):
     def stop(self):
         if self._persistent:
             logging.debug("Saving state to '%s'...", self._db)
-            state = shelve.open(self._db)
-            state['events'] = self.state
-            state.close()
+            self.con.set('flower:state', pickle.dumps(self.state))
 
     def run(self):
         try_interval = 1
